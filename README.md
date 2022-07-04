@@ -1,5 +1,5 @@
 # WeBack Robot Vacuum integration for Home Assistant
-Custom component to control/automate Weback robot vacuum cleaners.
+Custom component to control/automate Weback robot vacuum cleaners. The code used some ideas from other repositories (https://github.com/Jezza34000/weback and https://github.com/opravdin/weback-hass). But the main process required decompiling the weback APK file in order to analyze the source code and also doing a man in the middle attack between the android app and the remote server using a custom (fake) certificate in order to analyze the network traffic unencrypted (TLS and WSS websockets).
 
 It has been tested only with the ABIR XS-X6 robot. But should work with many (most) weback controlled robot vaccuum cleaners. Please, let me know if your device is supported. This Home Assistant custom component was quite hard to create because of the complex reverse engineering process that took me several weeks of work. 
 
