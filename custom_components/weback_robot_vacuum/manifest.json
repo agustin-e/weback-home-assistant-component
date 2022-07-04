@@ -1,0 +1,10 @@
+{
+    "domain": "weback_robot_vacuum",
+    "name": "Weback Robot Vacuum",    
+    "requirements": [
+    ],
+    "codeowners": [
+      "@agustin-e"
+    ],
+    "version": "1.0"
+  }
