@@ -19,7 +19,6 @@ class RobotController:
     
     
     DIRECTION_CONTROL = 'DirectionControl'
-    EDGE_DETECT = 'PlanningRect'
     RELOCATION = 'Relocation'
 
     CLEAN_MODE_STOP  = 'Standby'
@@ -49,8 +48,9 @@ class RobotController:
 
     ROBOT_LOCATION_SOUND = 'LocationAlarm'
     ROBOT_PLANNING_LOCATION = 'PlanningLocation'
+    ROBOT_PLANNING_RECT = 'PlanningRect'
 
-    CLEANING_STATES = {DIRECTION_CONTROL, EDGE_DETECT, RELOCATION, CLEAN_MODE_Z, CLEAN_MODE_AUTO, CLEAN_MODE_EDGE, CLEAN_MODE_EDGE_DETECT, CLEAN_MODE_SPOT, CLEAN_MODE_SINGLE_ROOM, CLEAN_MODE_MOP, CLEAN_MODE_SMART}
+    CLEANING_STATES = {DIRECTION_CONTROL, ROBOT_PLANNING_RECT, RELOCATION, CLEAN_MODE_Z, CLEAN_MODE_AUTO, CLEAN_MODE_EDGE, CLEAN_MODE_EDGE_DETECT, CLEAN_MODE_SPOT, CLEAN_MODE_SINGLE_ROOM, CLEAN_MODE_MOP, CLEAN_MODE_SMART}
     CHARGING_STATES = {CHARGE_MODE_CHARGING, CHARGE_MODE_DOCK_CHARGING, CHARGE_MODE_DIRECT_CHARGING}
     DOCKED_STATES   = {CHARGE_MODE_IDLE, CHARGE_MODE_CHARGING, CHARGE_MODE_DOCK_CHARGING, CHARGE_MODE_DIRECT_CHARGING}
 
@@ -159,3 +159,7 @@ class RobotController:
     async def goto(self, point: str):
         _LOGGER.debug("*** Goto (X,Y) location: " + point)
         await self.weback_api.goto_command(self.name, self.sub_type, point)
+
+    async def clean_rect(self, rectangle: str):
+        _LOGGER.debug("*** Clean rect: " + rectangle)
+        await self.weback_api.clean_rectangle_command(self.name, self.sub_type, rectangle)
