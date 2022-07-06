@@ -60,7 +60,8 @@ class WebackVacuumApi:
         _LOGGER.debug(data)
 
         
-        async with httpx.AsyncClient() as client:
+        t = httpx.Timeout(30.0, connect=90.0)
+        async with httpx.AsyncClient(timeout=t) as client:
             r = await client.post(AUTH_URL, json=data)      
             _LOGGER.debug(r)
 
@@ -223,8 +224,9 @@ class WebackVacuumApi:
         self.update_callback = callback
 
 
+    # goto point
     async def goto_command(self, thing_name, sub_type, point: str):
-        _LOGGER.debug("*** goto_command (X,Y) location: " + point)
+        _LOGGER.debug("*** goto_command (point) location: " + point)
         
         payload = {
             "topic_name": "$aws/things/"+ thing_name +"/shadow/update",
@@ -238,13 +240,14 @@ class WebackVacuumApi:
             "thing_name": thing_name,
         }
 
-        _LOGGER.debug(payload)
-        
+        _LOGGER.debug(payload)        
         json_message = str( payload ).replace("'", '"').replace("\"@xy@\"", point)
 
         _LOGGER.debug(json_message)
         await self.send_message_to_cloud( json_message )
 
+
+        # sync
         payload = {
             "opt": "sync_thing",
             "sub_type": sub_type,
@@ -259,6 +262,31 @@ class WebackVacuumApi:
         await self.send_message_to_cloud( json_message )
 
 
+
+    # clean rectangle
+    async def clean_rectangle_command(self, thing_name, sub_type, rectangle: str):
+        _LOGGER.debug("*** clean_rectangle_command (rectangle) location: " + rectangle)
+        
+        payload = {
+            "topic_name": "$aws/things/"+ thing_name +"/shadow/update",
+            "opt": "send_to_device",
+            "sub_type": sub_type,
+            "topic_payload": {'state': {
+                                    'working_status': 'PlanningRect',
+                                    'virtual_rect_info': "@rectangle@"
+                                }
+                            },
+            "thing_name": thing_name,
+        }
+
+        _LOGGER.debug(payload)        
+        json_message = str( payload ).replace("'", '"').replace("\"@rectangle@\"", rectangle)
+
+        _LOGGER.debug(json_message)
+        await self.send_message_to_cloud( json_message )
+
+
+        # sync
         payload = {
             "opt": "sync_thing",
             "sub_type": sub_type,
