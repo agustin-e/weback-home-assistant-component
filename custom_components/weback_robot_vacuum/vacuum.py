@@ -1,4 +1,4 @@
-"""Support for Weback Robot Vacuums."""
+"""Support for Weback Vaccum Robots."""
 import logging
 import datetime
 from functools import partial
@@ -38,7 +38,7 @@ STATE_MAPPING = {
     RobotController.ROBOT_PLANNING_LOCATION : STATE_CLEANING,
     RobotController.CLEAN_MODE_Z            : STATE_CLEANING,
     RobotController.DIRECTION_CONTROL       : STATE_CLEANING,
-    RobotController.EDGE_DETECT             : STATE_CLEANING,
+    RobotController.ROBOT_PLANNING_RECT     : STATE_CLEANING,
     RobotController.RELOCATION              : STATE_CLEANING,
 
     # STATE_DOCKED
@@ -64,6 +64,11 @@ STATE_MAPPING = {
 SERVICE_GOTO_LOCATION = 'go_to_location'
 ATTR_POINT = "point"
 
+SERVICE_CLEAN_RECTANGLE = 'clean_rectangle'
+ATTR_RECTANGLE = "rectangle"
+
+
+
 from homeassistant.helpers import entity_platform
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
@@ -78,6 +83,13 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
             {  
                 vol.Required(ATTR_POINT): cv.string,
             }, "async_goto_location"
+    )
+
+    platform.async_register_entity_service(
+            SERVICE_CLEAN_RECTANGLE, 
+            {  
+                vol.Required(ATTR_RECTANGLE): cv.string,
+            }, "async_clean_rectangle"
     )
     
 
@@ -166,7 +178,7 @@ class WebackVacuumRobot(StateVacuumEntity):
 
     @property
     def state(self):
-        _LOGGER.debug("Vacuum: STATE; Mapear el valor de " + self.device.current_mode)
+        _LOGGER.debug("Vacuum: STATE! Mapear el valor de " + self.device.current_mode)
         """Return the current state of the vacuum."""
         
         try:
@@ -263,3 +275,7 @@ class WebackVacuumRobot(StateVacuumEntity):
     async def async_goto_location(self, point: str):
         _LOGGER.debug("*** async_goto_location location: " + point)
         await self.device.goto(point)
+
+    async def async_clean_rectangle(self, rectangle: str):
+        _LOGGER.debug("*** async_clean_rectangle: " + rectangle)
+        await self.device.clean_rect(rectangle)
