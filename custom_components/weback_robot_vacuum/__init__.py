@@ -10,6 +10,11 @@ import voluptuous as vol
 
 from homeassistant.const import CONF_PASSWORD, CONF_SCAN_INTERVAL, CONF_USERNAME
 import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.update_coordinator import (
+    CoordinatorEntity,
+    DataUpdateCoordinator,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -67,3 +72,11 @@ async def async_setup(hass, config):
         hass.helpers.discovery.load_platform("vacuum", DOMAIN, {}, config)
 
     return True
+
+    coordinator = DataUpdateCoordinator(
+        hass,
+        _LOGGER,
+        name=DOMAIN,
+        update_method=async_update_data,
+        update_interval=timedelta(seconds=60),
+    )
