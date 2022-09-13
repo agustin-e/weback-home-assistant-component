@@ -9,19 +9,30 @@ import httpx
 _LOGGER = logging.getLogger(__name__)
 
 AUTH_URL = "https://user.grit-cloud.com/prod/oauth"
+SOCK_OPEN = "Open"
+SOCK_CLOSE = "Close"
+SOCK_ERROR = "Error"
+
+
+def null_callback(message):
+    _LOGGER.debug("WebackVacuumApi null_callback: ", message)
 
 
 class WebackVacuumApi:
     
     def __init__(self, user, password, region):
         _LOGGER.debug("WebackVacuumApi __init__")
-        self.update_callback = self.null_callback
+        self.update_callback = null_callback
         self.user = user
         self.password = password
         self.region = region
         self.ws = websocket
         self.authorization = "Basic KG51bGwpOihudWxsKQ=="
-        self.socket_state = "CLOSE"
+        self.socket_state = SOCK_CLOSE
+        self.jwt_token = None
+        self.region_name = None
+        self.wss_url = None
+        self.api_url = None
     
     def clone(self):
         
@@ -65,7 +76,7 @@ class WebackVacuumApi:
             if r.status_code == 200:
                 json_response = r.json()
                 if json_response['msg'] == 'success':
-                    _LOGGER.debug("WebackVacuumApi login sucessful - Token: " + json_response['data']['jwt_token'])
+                    _LOGGER.debug("WebackVacuumApi login successful - Token: " + json_response['data']['jwt_token'])
                     
                     self.jwt_token = json_response['data']['jwt_token']
                     self.region_name = json_response['data']['region_name']
@@ -75,10 +86,7 @@ class WebackVacuumApi:
                     _LOGGER.error("WebackVacuumApi can't login (2) - verify user/password/region")
             else:
                 _LOGGER.error("WebackVacuumApi can't login - verify user/password/region")
-    
-    def null_callback(self, message):
-        _LOGGER.debug("WebackVacuumApi null_callback: ", message)
-    
+
     async def robot_list(self):
         
         _LOGGER.debug("WebackVacuumApi - robot list")
@@ -101,7 +109,6 @@ class WebackVacuumApi:
         _LOGGER.debug("WebackVacuumApi connect_wss")
         
         try:
-            websocket.enableTrace(True)
             self.ws = websocket.WebSocketApp(self.wss_url, header={"Authorization": self.authorization,
                                                                    "region": self.region_name,
                                                                    "token": self.jwt_token,
@@ -125,30 +132,29 @@ class WebackVacuumApi:
                 if self.socket_state == "OPEN":
                     _LOGGER.debug("WSS conexión establecida")
                     return True
-                asyncio.sleep(0.5)
             
             _LOGGER.debug("WSS espera fallida")
             return False
         
         except Exception as e:
-            self.socket_state = "ERROR"
+            self.socket_state = SOCK_ERROR
             _LOGGER.debug("WSS error durante la apertura del socket", e)
             return False
     
     def on_error(self, ws, error):
         _LOGGER.debug("WebackVacuumApi ERROR", error)
         ws.close()
-        self.socket_state = "ERROR"
+        self.socket_state = SOCK_ERROR
     
     def on_close(self, ws, close_status_code, close_msg):
         _LOGGER.debug("WebackVacuumApi CLOSE")
         ws.close()
-        self.socket_state = "CLOSE"
+        self.socket_state = SOCK_CLOSE
         _LOGGER.debug("WSS | socket cerrado - status_code", close_status_code, close_msg)
     
     def on_open(self, ws):
         _LOGGER.debug("WebackVacuumApi socket OPEN")
-        self.socket_state = "OPEN"
+        self.socket_state = SOCK_OPEN
         _LOGGER.debug("WSS conexion establecida!")
     
     def on_message(self, ws, message):
@@ -160,18 +166,18 @@ class WebackVacuumApi:
     async def send_message_to_cloud(self, json_message):
         _LOGGER.debug("WebackVacuumApi.send_message_to_cloud", json_message)
         
-        if self.socket_state != "OPEN":
+        if self.socket_state != SOCK_OPEN:
             _LOGGER.debug("WebackVacuumApi intento conectar - socket: ", self.socket_state)
             await self.connect_wss()
         
-        if self.socket_state == "OPEN":
+        if self.socket_state == SOCK_OPEN:
             _LOGGER.debug(">> WSS enviando mensaje", json_message)
             
             try:
                 self.ws.send(json_message)
             except websocket.WebSocketConnectionClosedException as e:
                 print('Socket closed when trying to send message to cloud')
-                self.socket_state = "CLOSE"
+                self.socket_state = SOCK_CLOSE
         
         else:
             if await self.connect_wss():
@@ -181,7 +187,7 @@ class WebackVacuumApi:
                     self.ws.send(json_message)
                 except websocket.WebSocketConnectionClosedException as e:
                     print('Socket closed when trying to send message to cloud')
-                    self.socket_state = "CLOSE"
+                    self.socket_state = SOCK_CLOSE
             
             else:
                 logging.debug("# state WSS NOK (failed)")
